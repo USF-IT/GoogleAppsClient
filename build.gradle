@@ -1,0 +1,100 @@
+subprojects {
+    apply plugin: 'groovy'
+    group = 'com.github.epierce'
+    version = '0.1.0'
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven {
+          url "http://maven.burtsev.net/"
+        }
+    }
+
+    project.ext {
+      groovyVersion = '2.0.5'
+      slf4jVersion = '1.7.2'
+      gdataVersion = '1.47.1'
+      gapiVersion = '1.13.2-beta'
+      commonsCliVersion = '1.2'
+    }
+
+    dependencies {
+        groovy "org.codehaus.groovy:groovy-all:${groovyVersion}"
+    }
+}
+
+project(':GoogleAppsClient') {
+    apply plugin: 'maven'
+
+    dependencies {
+          compile "com.google.api-client:google-api-client:${project.gapiVersion}"
+          compile "com.google.gdata.gdata-java-client:gdata-core-1.0:${project.gdataVersion}"
+          compile "com.google.gdata.gdata-java-client:gdata-appsforyourdomain-meta-1.0:${project.gdataVersion}"
+          compile "com.google.gdata.gdata-java-client:gdata-appsforyourdomain-1.0:${project.gdataVersion}"
+          compile "com.google.gdata.gdata-java-client:gdata-client-1.0:${project.gdataVersion}"
+          compile "com.google.gdata.gdata-java-client:gdata-client-meta-1.0:${project.gdataVersion}"
+          compile "org.slf4j:slf4j-api:${project.slf4jVersion}"
+          compile "org.slf4j:slf4j-log4j12:${project.slf4jVersion}"
+    }
+
+    uploadArchives {
+        repositories {
+            mavenDeployer {
+                repository(url: "file://localhost/tmp/myRepo/")
+                pom.project {
+                  name 'GoogleAppsClient'
+                  packaging 'jar'
+                  description 'Groovy Client Library for GoogleApps Provisioning'
+                  inceptionYear '2013'
+
+                  licenses {
+                    license {
+                      name 'The Apache Software License, Version 2.0'
+                      url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                      distribution 'repo'
+                    }
+                  }
+
+                  developers {
+                    developer {
+                      id 'epierce'
+                      name 'Eric Pierce'
+                      email 'epierce@usf.edu'
+                      organization 'University of South Florida'
+                      organizationUrl 'http://www.usf.edu'
+                      roles {
+                        role 'architect'
+                        role 'developer'
+                      }
+                    }
+                  }
+                }
+            }
+        }
+    }
+}
+
+project(':GoogleAppsTool') {
+    apply plugin: 'application'
+
+    mainClassName = 'com.github.epierce.GoogleAppsTool'
+
+    dependencies {
+      compile "commons-cli:commons-cli:${project.commonsCliVersion}"
+      compile project(':GoogleAppsClient')
+    }
+
+    //Set the classpath to be '$APP_HOME:$APP_HOME/lib/*'
+    startScripts {
+      classpath = files('$APP_HOME/lib/*')
+
+      doLast {
+        def scriptFile = file "${outputDir}/${applicationName}"
+        scriptFile.text = scriptFile.text.replace('CLASSPATH=$APP_HOME/lib/*', 'CLASSPATH=$APP_HOME:$APP_HOME/lib/*')
+      }
+    }        
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.4'
+}
