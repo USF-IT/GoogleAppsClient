@@ -249,7 +249,7 @@ class GoogleAppsClient {
     * service.
     */
     def updateUser(userDetails) throws AppsForYourDomainException, ServiceException, IOException {
-        log.debug("Updating user ${username}")
+        log.debug("Updating user ${userDetails.username}")
 
         def retrieveUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + userDetails.username)
        
