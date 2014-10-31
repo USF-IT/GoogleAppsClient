@@ -1,25 +1,25 @@
 subprojects {
     apply plugin: 'groovy'
+    apply plugin: 'idea'
     group = 'com.github.epierce'
-    version = '0.1.0'
+    version = '1.0.0'
     repositories {
         mavenCentral()
         mavenLocal()
-        maven {
-          url "http://maven.burtsev.net/"
-        }
     }
 
     project.ext {
-      groovyVersion = '2.0.5'
-      slf4jVersion = '1.7.2'
-      gdataVersion = '1.47.1'
-      gapiVersion = '1.13.2-beta'
-      commonsCliVersion = '1.2'
+        groovyVersion = '2.3.7'
+        slf4jVersion = '1.7.2'
+        gAdminDirVersion = 'directory_v1-rev47-1.19.0'
+        gOAUTHVersion = 'v2-rev80-1.19.0'
+        commonsCliVersion = '1.2'
+        googleHTTPclientJackson = '1.19.0'
+        googleOAUTHclient = '1.19.0'
     }
 
     dependencies {
-        groovy "org.codehaus.groovy:groovy-all:${groovyVersion}"
+        compile "org.codehaus.groovy:groovy-all:${groovyVersion}"
     }
 }
 
@@ -27,14 +27,9 @@ project(':GoogleAppsClient') {
     apply plugin: 'maven'
 
     dependencies {
-          compile "com.google.api-client:google-api-client:${project.gapiVersion}"
-          compile "com.google.gdata.gdata-java-client:gdata-core-1.0:${project.gdataVersion}"
-          compile "com.google.gdata.gdata-java-client:gdata-appsforyourdomain-meta-1.0:${project.gdataVersion}"
-          compile "com.google.gdata.gdata-java-client:gdata-appsforyourdomain-1.0:${project.gdataVersion}"
-          compile "com.google.gdata.gdata-java-client:gdata-client-1.0:${project.gdataVersion}"
-          compile "com.google.gdata.gdata-java-client:gdata-client-meta-1.0:${project.gdataVersion}"
-          compile "org.slf4j:slf4j-api:${project.slf4jVersion}"
-          compile "org.slf4j:slf4j-log4j12:${project.slf4jVersion}"
+        compile "com.google.apis:google-api-services-admin-directory:${gAdminDirVersion}"
+        compile "org.slf4j:slf4j-api:${project.slf4jVersion}"
+        compile "org.slf4j:slf4j-log4j12:${project.slf4jVersion}"
     }
 
     uploadArchives {
@@ -42,32 +37,32 @@ project(':GoogleAppsClient') {
             mavenDeployer {
                 repository(url: "file://localhost/tmp/myRepo/")
                 pom.project {
-                  name 'GoogleAppsClient'
-                  packaging 'jar'
-                  description 'Groovy Client Library for GoogleApps Provisioning'
-                  inceptionYear '2013'
+                    name 'GoogleAppsClient'
+                    packaging 'jar'
+                    description 'Groovy Client Library for GoogleApps Admin Directory API'
+                    inceptionYear '2014'
 
-                  licenses {
-                    license {
-                      name 'The Apache Software License, Version 2.0'
-                      url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                      distribution 'repo'
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                            distribution 'repo'
+                        }
                     }
-                  }
 
-                  developers {
-                    developer {
-                      id 'epierce'
-                      name 'Eric Pierce'
-                      email 'epierce@usf.edu'
-                      organization 'University of South Florida'
-                      organizationUrl 'http://www.usf.edu'
-                      roles {
-                        role 'architect'
-                        role 'developer'
-                      }
+                    developers {
+                        developer {
+                            id 'epierce'
+                            name 'Eric Pierce'
+                            email 'epierce@usf.edu'
+                            organization 'University of South Florida'
+                            organizationUrl 'http://www.usf.edu'
+                            roles {
+                                role 'architect'
+                                role 'developer'
+                            }
+                        }
                     }
-                  }
                 }
             }
         }
@@ -80,21 +75,24 @@ project(':GoogleAppsTool') {
     mainClassName = 'com.github.epierce.GoogleAppsTool'
 
     dependencies {
-      compile "commons-cli:commons-cli:${project.commonsCliVersion}"
-      compile project(':GoogleAppsClient')
+        compile "com.google.apis:google-api-services-oauth2:${gOAUTHVersion}"
+        compile "com.google.http-client:google-http-client-jackson2:${googleHTTPclientJackson}"
+        compile "com.google.oauth-client:google-oauth-client-jetty:${googleOAUTHclient}"
+        compile "commons-cli:commons-cli:${project.commonsCliVersion}"
+        compile project(':GoogleAppsClient')
     }
 
     //Set the classpath to be '$APP_HOME:$APP_HOME/lib/*'
     startScripts {
-      classpath = files('$APP_HOME/lib/*')
+        classpath = files('$APP_HOME/lib/*')
 
-      doLast {
-        def scriptFile = file "${outputDir}/${applicationName}"
-        scriptFile.text = scriptFile.text.replace('CLASSPATH=$APP_HOME/lib/*', 'CLASSPATH=$APP_HOME:$APP_HOME/lib/*')
-      }
-    }        
+        doLast {
+            def scriptFile = file "${outputDir}/${applicationName}"
+            scriptFile.text = scriptFile.text.replace('CLASSPATH=$APP_HOME/lib/*', 'CLASSPATH=$APP_HOME:$APP_HOME/lib/*')
+        }
+    }
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.4'
+    gradleVersion = '2.1'
 }
