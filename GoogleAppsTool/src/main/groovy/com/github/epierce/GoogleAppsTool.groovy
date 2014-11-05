@@ -148,6 +148,8 @@ class GoogleAppsTool {
         if ((opt.delete) && ((opt.rename) || (opt.create) || (opt.update))) throw new IllegalArgumentException('--create, --rename, --delete and --update are mutually exclusive')
         if ((opt.update) && ((opt.rename) || (opt.delete) || (opt.create))) throw new IllegalArgumentException('--create, --rename, --delete and --update are mutually exclusive')
 
+        if ((opt.hash) && ((opt.hash != 'MD5') && (opt.hash != 'SHA-1'))) throw new IllegalArgumentException('"MD5" and "SHA-1" are the only valid hash functions')
+
         if ((opt.rename) && (!opt.newUser)) throw new IllegalArgumentException('--newUser required!')
         if ((opt.delete) && (!opt.user)) throw new IllegalArgumentException('--user required!')
         if ((opt.update) && ((!opt.givenName) || (!opt.familyName))) throw new IllegalArgumentException('--givenName and --familyName required!')
@@ -176,7 +178,15 @@ class GoogleAppsTool {
             //Update a user
         } else if (options.update) {
 
-            def updateMap = [username: options.user, familyName: options.familyName, givenName: options.givenName]
+            def updateMap = [   username: options.user,
+                            familyName: options.familyName,
+                            givenName: options.givenName
+            ]
+
+            if (options.hash && options.password) {
+                updateMap.passwordHashFunction = options.hash
+                updateMap.password= options.password
+            }
 
             if (googleAppsClient.updateUser(updateMap)) return "User ${options.user} updated."
 

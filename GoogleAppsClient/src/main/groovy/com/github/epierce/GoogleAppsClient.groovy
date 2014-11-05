@@ -1,7 +1,7 @@
 package com.github.epierce
 
 import groovy.json.*
-import java.security.MessageDigest
+import org.apache.commons.codec.digest.DigestUtils
 import groovy.util.logging.Slf4j
 
 import com.google.api.client.auth.oauth2.Credential
@@ -104,7 +104,6 @@ class GoogleAppsClient {
 
         user.primaryEmail = username
 
-        // requires DirectoryScopes.ADMIN_DIRECTORY_USER scope
         directoryService.users().insert(user).execute()
   }
 
@@ -182,24 +181,18 @@ class GoogleAppsClient {
 
     def changePasswordMD5(String username, String password){
 
-        def md5 = MessageDigest.getInstance("MD5")
-        md5.update(password.getBytes())
-        def hash = new BigInteger(1, md5.digest())
-        def hashedPassword = hash.toString(16)
+        def md5Digest = DigestUtils.md5Hex(password.getBytes("UTF-8"))
 
-        def userDetails = [username: username, passwordHashFunction: "MD5", password: hashedPassword]
+        def userDetails = [username: username, passwordHashFunction: 'MD5', password: md5Digest]
 
         updateUser(userDetails)
     }
 
     def changePasswordSHA1(String username, String password){
 
-        def sha1 = MessageDigest.getInstance("SHA1")
-        sha1.update(password.getBytes())
-        def hash = new BigInteger(1, sha1.digest())
-        def hashedPassword = hash.toString(16)
+        def sha1Digest = DigestUtils.shaHex(password.getBytes("UTF-8"))
 
-        def userDetails = [username: username, passwordHashFunction: "SHA-1", password: hashedPassword]
+        def userDetails = [username: username, passwordHashFunction: 'SHA-1', password: sha1Digest]
 
         updateUser(userDetails)
     }

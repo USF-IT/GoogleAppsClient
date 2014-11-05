@@ -16,6 +16,7 @@ subprojects {
         commonsCliVersion = '1.2'
         googleHTTPclientJackson = '1.19.0'
         googleOAUTHclient = '1.19.0'
+        commonsCodecVersion = '1.9'
     }
 
     dependencies {
@@ -28,6 +29,7 @@ project(':GoogleAppsClient') {
 
     dependencies {
         compile "com.google.apis:google-api-services-admin-directory:${gAdminDirVersion}"
+        compile "commons-codec:commons-codec:${commonsCodecVersion}"
         compile "org.slf4j:slf4j-api:${project.slf4jVersion}"
         compile "org.slf4j:slf4j-log4j12:${project.slf4jVersion}"
     }
