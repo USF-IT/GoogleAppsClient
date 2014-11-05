@@ -213,96 +213,61 @@ class GoogleAppsClient {
 //        userService.delete(deleteUrl)
 //    }
 //
-//    /**
-//    * Suspends a user. Note that executing this method for a user who is already
-//    * suspended has no effect.
-//    *
-//    * @param username The user you wish to suspend.
-//    * @throws AppsForYourDomainException If a Provisioning API specific occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    *         service.
-//    */
-//    def suspendUser(username) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Suspending user ${username}")
-//
-//        def retrieveUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def userEntry = userService.getEntry(retrieveUrl, UserEntry.class)
-//        userEntry.getLogin().setSuspended(true);
-//
-//        def updateUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def result = userService.update(updateUrl, userEntry)
-//        convertUserEntrytoMap(result)
-//    }
-//
-//
-//    /**
-//    * Restores a user. Note that executing this method for a user who is not
-//    * suspended has no effect.
-//    *
-//    * @param username The user you wish to restore.
-//    * @throws AppsForYourDomainException If a Provisioning API specific occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    *         service.
-//    */
-//    def restoreUser(username) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Restoring user ${username}")
-//
-//        def retrieveUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def userEntry = userService.getEntry(retrieveUrl, UserEntry.class)
-//        userEntry.getLogin().setSuspended(false)
-//
-//        def updateUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def result = userService.update(updateUrl, userEntry)
-//        convertUserEntrytoMap(result)
-//    }
-//
-//    /**
-//    * Set admin privilege for user. Note that executing this method for a user
-//    * who is already an admin has no effect.
-//    *
-//    * @param username The user you wish to make an admin.
-//    * @throws AppsForYourDomainException If a Provisioning API specific error
-//    *         occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    *         service.
-//    */
-//    def addAdminPrivilege(username) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Setting admin privileges for user ${username}")
-//
-//        def retrieveUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def userEntry = userService.getEntry(retrieveUrl, UserEntry.class)
-//        userEntry.getLogin().setAdmin(true)
-//
-//        def updateUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def result = userService.update(updateUrl, userEntry)
-//        convertUserEntrytoMap(result)
-//    }
-//
-//    /**
-//    * Remove admin privilege for user. Note that executing this method for a user
-//    * who is not an admin has no effect.
-//    *
-//    * @param username The user you wish to remove admin privileges.
-//    * @throws AppsForYourDomainException If a Provisioning API specific error
-//    *         occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    *         service.
-//    */
-//    def removeAdminPrivilege(username) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Removing admin privileges for user ${username}")
-//
-//        def retrieveUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def userEntry = userService.getEntry(retrieveUrl, UserEntry.class)
-//        userEntry.getLogin().setAdmin(false)
-//
-//        def updateUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def result = userService.update(updateUrl, userEntry)
-//        convertUserEntrytoMap(result)
-//    }
+    /**
+    * Suspends a user. Note that executing this method for a user who is already suspended has no effect.
+    *
+    * @param username The user you wish to suspend.
+    */
+    def suspendUser(username) {
+        log.debug("Suspending user ${username}")
+
+        def userEntry = directoryService.users().get(username).execute()
+        userEntry.suspended = true
+
+        directoryService.users().update(username, userEntry).execute()
+
+    }
+
+    /**
+    * Restores a user. Note that executing this method for a user who is not suspended has no effect.
+    *
+    * @param username The user you wish to restore.
+
+    */
+    def restoreUser(username) {
+        log.debug("Restoring user ${username}")
+
+        def userEntry = directoryService.users().get(username).execute()
+        userEntry.suspended = false
+
+        directoryService.users().update(username, userEntry).execute()
+    }
+
+    /**
+    * Set admin privilege for user. Note that executing this method for a user who is already an admin has no effect.
+    *
+    * @param username The user you wish to make an admin.
+    */
+    def addAdminPrivilege(username) {
+        log.debug("Setting admin privileges for user ${username}")
+
+        User userEntry = directoryService.users().get(username).execute()
+        userEntry.setIsAdmin(true)
+        directoryService.users().update(username, userEntry).execute()
+    }
+
+    /**
+    * Remove admin privilege for user. Note that executing this method for a user who is not an admin has no effect.
+    *
+    * @param username The user you wish to remove admin privileges.
+    */
+    def removeAdminPrivilege(username) {
+        log.debug("Removing admin privileges for user ${username}")
+
+        User userEntry = directoryService.users().get(username).execute()
+        userEntry.setIsAdmin(false)
+        directoryService.users().update(username, userEntry).execute()
+    }
 //
 //    /**
 //    * Require a user to change password at next login. Note that executing this
