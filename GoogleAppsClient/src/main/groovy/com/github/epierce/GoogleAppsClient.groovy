@@ -1,6 +1,5 @@
 package com.github.epierce
 
-import groovy.json.*
 import org.apache.commons.codec.digest.DigestUtils
 import groovy.util.logging.Slf4j
 
@@ -11,6 +10,7 @@ import com.google.api.client.json.JsonFactory
 import com.google.api.services.admin.directory.Directory
 import com.google.api.services.admin.directory.model.User
 import com.google.api.services.admin.directory.model.Users
+import com.google.api.services.admin.directory.model.Alias
 import com.google.api.services.admin.directory.model.UserName
 
 @Slf4j
@@ -37,31 +37,6 @@ class GoogleAppsClient {
 
 
     }
-
-    private def convertUserEntrytoMap(User userEntry) {
-        def userMap = [
-                creationTime    : userEntry.getCreationTime(),
-                customerId      : userEntry.getCustomerId(),
-                id              : userEntry.getId(),
-                inGAL           : userEntry.getIncludeInGlobalAddressList(),
-                isAdmin         : userEntry.getIsAdmin(),
-                isDelegatedAdmin: userEntry.getIsDelegatedAdmin(),
-                lastLoginTime   : userEntry.getLastLoginTime(),
-                orgPath         : userEntry.getOrgUnitPath(),
-                primaryEmail    : userEntry.getPrimaryEmail(),
-                suspended       : userEntry.getSuspended(),
-                suspendedReason : userEntry.getSuspensionReason(),
-                photo           : userEntry.getThumbnailPhotoUrl(),
-                familyName      : userEntry.getName().familyName,
-                givenName       : userEntry.getName().givenName,
-                changePasswordAtNextLogin: userEntry.getChangePasswordAtNextLogin()
-        ]
-    }
-//
-//    private def convertNicknameEntrytoMap(nicknameEntry){
-//        def userMap = [ username: nicknameEntry.getLogin().userName,
-//                        nickname: nicknameEntry.getNickname().name]
-//    }
 
 /**
    * Creates a new user with an email account.
@@ -196,23 +171,18 @@ class GoogleAppsClient {
 
         updateUser(userDetails)
     }
-//
-//    /**
-//    * Deletes a user.
-//    *
-//    * @param username The user you wish to delete.
-//    * @throws AppsForYourDomainException If a Provisioning API specific occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    *         service.
-//    */
-//    def deleteUser(username) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Deleting user ${username}")
-//
-//        def deleteUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        userService.delete(deleteUrl)
-//    }
-//
+
+    /**
+    * Deletes a user.
+    *
+    * @param username The user you wish to delete.
+    */
+    def deleteUser(username) {
+        log.debug("Deleting user ${username}")
+
+        directoryService.users().delete(username).execute()
+    }
+
     /**
     * Suspends a user. Note that executing this method for a user who is already suspended has no effect.
     *
@@ -268,118 +238,62 @@ class GoogleAppsClient {
         userEntry.setIsAdmin(false)
         directoryService.users().update(username, userEntry).execute()
     }
-//
-//    /**
-//    * Require a user to change password at next login. Note that executing this
-//    * method for a user who is already required to change password at next login
-//    * as no effect.
-//    *
-//    * @param username The user who must change his or her password.
-//    * @throws AppsForYourDomainException If a Provisioning API specific occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    *         service.
-//    */
-//    def forceUserToChangePassword(username) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Requiring ${username} to change password at next login")
-//
-//        def retrieveUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def userEntry = userService.getEntry(retrieveUrl, UserEntry.class)
-//        userEntry.getLogin().setChangePasswordAtNextLogin(true)
-//
-//        def updateUrl = new URL(domainUrlBase + "user/" + SERVICE_VERSION + "/" + username)
-//        def result = userService.update(updateUrl, userEntry)
-//        convertUserEntrytoMap(result)
-//    }
-//
-//    /**
-//    * Creates a nickname for the username.
-//    *
-//    * @param username The user for which we want to create a nickname.
-//    * @param nickname The nickname you wish to create.
-//    * @return A NicknameEntry object of the newly created nickname.
-//    * @throws AppsForYourDomainException If a Provisioning API specific occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    * service.
-//    */
-//    def createNickname(username, nickname) throws AppsForYourDomainException, ServiceException, IOException {
-//
-//        log.debug("Creating nickname ${nickname} for user ${username}")
-//
-//        def entry = new NicknameEntry()
-//        def nicknameExtension = new Nickname()
-//        nicknameExtension.setName(nickname);
-//        entry.addExtension(nicknameExtension)
-//
-//        def login = new Login()
-//        login.setUserName(username)
-//        entry.addExtension(login)
-//
-//        def insertUrl = new URL(domainUrlBase + "nickname/" + SERVICE_VERSION)
-//        def result = nicknameService.insert(insertUrl, entry)
-//        convertNicknameEntrytoMap(result)
-//    }
-//
-//    /**
-//    * Retrieves a nickname.
-//    *
-//    * @param nickname The nickname you wish to retrieve.
-//    * @return A NicknameEntry object of the newly created nickname.
-//    * @throws AppsForYourDomainException If a Provisioning API specific occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    * service.
-//    */
-//    def retrieveNickname(nickname) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Retrieving nickname ${nickname}")
-//
-//        def retrieveUrl = new URL(domainUrlBase + "nickname/" + SERVICE_VERSION + "/" + nickname)
-//        def result = nicknameService.getEntry(retrieveUrl, NicknameEntry.class)
-//        convertNicknameEntrytoMap(result)
-//    }
-//
-//    /**
-//    * Retrieves all nicknames for the given username.
-//    *
-//    * @param username The user for which you want all nicknames.
-//    * @return A NicknameFeed object with all the nicknames for the user.
-//    * @throws AppsForYourDomainException If a Provisioning API specific occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    *         service.
-//    */
-//    def retrieveNicknames(username) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Retrieving nicknames for user ${username}")
-//
-//        def feedUrl = new URL(domainUrlBase + "nickname/" + SERVICE_VERSION)
-//        def query = new AppsForYourDomainQuery(feedUrl)
-//        query.setUsername(username);
-//        def feedResult = nicknameService.query(query, NicknameFeed.class)
-//
-//        def nicknameList = []
-//        feedResult.entries.each { nicknameEntry ->
-//            def nickMap = convertNicknameEntrytoMap(nicknameEntry)
-//            nicknameList.add(nickMap)
-//        }
-//
-//        return nicknameList
-//    }
-//
-//    /**
-//    * Deletes a nickname.
-//    *
-//    * @param nickname The nickname you wish to delete.
-//    * @throws AppsForYourDomainException If a Provisioning API specific occurs.
-//    * @throws ServiceException If a generic GData framework error occurs.
-//    * @throws IOException If an error occurs communicating with the GData
-//    * service.
-//    */
-//    def deleteNickname(nickname) throws AppsForYourDomainException, ServiceException, IOException {
-//        log.debug("Deleting nickname ${nickname}")
-//
-//        def deleteUrl = new URL(domainUrlBase + "nickname/" + SERVICE_VERSION + "/" + nickname)
-//        nicknameService.delete(deleteUrl)
-//    }
+
+    /**
+    * Require a user to change password at next login. Note that executing this
+    * method for a user who is already required to change password at next login
+    * as no effect.
+    *
+    * @param username The user who must change his or her password.
+    */
+    def forceUserToChangePassword(username) {
+        log.debug("Requiring ${username} to change password at next login")
+
+        User userEntry = directoryService.users().get(username).execute()
+        userEntry.setChangePasswordAtNextLogin(true)
+        directoryService.users().update(username, userEntry).execute()
+    }
+
+    /**
+    * Creates an alias for the username.
+    *
+    * @param username The user for which we want to create a nickname.
+    * @param alias The alias you wish to create.
+    * @return An Alias object of the newly created nickname.
+    */
+    def createAlias(username, alias) {
+
+        log.debug("Creating alias ${alias} for user ${username}")
+
+        Alias aliasEntry = new Alias()
+        aliasEntry.setPrimaryEmail(username)
+        aliasEntry.setAlias(alias)
+
+        directoryService.users().aliases().insert(username, aliasEntry).execute()
+    }
+
+    /**
+    * Retrieves all aliases for the given username.
+    *
+    * @param username The user for which you want all nicknames.
+    * @return An Alias object with all the nicknames for the user.
+    */
+    def retrieveAliases(username) {
+        log.debug("Retrieving aliases for user ${username}")
+
+        directoryService.users().aliases().list(username).execute()
+    }
+
+    /**
+    * Deletes an alias.
+    *
+    * @param username The user for which we want to create an alias.
+    * @param alias The alias you wish to delete.
+    */
+    def deleteAlias(username, alias){
+        log.debug("Deleting alias ${nickname} for user ${username}")
+
+        directoryService.users().aliases().delete(username, alias).execute()
+    }
 
 }

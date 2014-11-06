@@ -13,11 +13,6 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.client.util.store.FileDataStoreFactory
 import com.google.api.services.oauth2.Oauth2
 
-import com.google.api.services.admin.directory.Directory
-import com.google.api.services.admin.directory.model.User
-import com.google.api.services.admin.directory.model.Users
-
-
 class GoogleAppsTool {
 
     private static final def applicationName = "GoogleAppsTool"
@@ -55,7 +50,7 @@ class GoogleAppsTool {
 
             def googleAppsClient = new GoogleAppsClient(applicationName, httpTransport, jsonFactory, credential)
 
-            println runAction(googleAppsClient, opt) ?: ' '
+            runAction(googleAppsClient, opt)
 
         }catch(Exception e) {
              exitOnError e.message
@@ -107,6 +102,9 @@ class GoogleAppsTool {
             p longOpt: 'password', args: 1, argName: 'password', 'Password', required: false
             _ longOpt: 'hash', args: 1, argName: 'hash', 'Password Hash Algorithm (MD5 or SHA1)', required: false
             n longOpt: 'newUser', args: 1, argName: 'newUser', 'New user@domain (--rename required)', required: false
+            _ longOpt: 'alias', args: 1, argName: 'newAlias', 'New user@domain alias (--add-alias required)', required: false
+            _ longOpt: 'addAlias', 'Add new alias', required: false
+            _ longOpt: 'deleteAlias', 'Delete alias', required: false
             _ longOpt: 'create', 'Create new user', required: false
             _ longOpt: 'rename', 'Change username', required: false
             _ longOpt: 'delete', 'Delete user', required: false
@@ -127,7 +125,9 @@ class GoogleAppsTool {
                         (!options.update) &&
                         (!options.rename) &&
                         (!options.delete) &&
-                        (!options.view)
+                        (!options.view) &&
+                        (!options.addAlias) &&
+                        (!options.deleteAlias)
                 )
         ) {
             cli.usage()
@@ -151,6 +151,7 @@ class GoogleAppsTool {
         if ((opt.hash) && ((opt.hash != 'MD5') && (opt.hash != 'SHA-1'))) throw new IllegalArgumentException('"MD5" and "SHA-1" are the only valid hash functions')
 
         if ((opt.rename) && (!opt.newUser)) throw new IllegalArgumentException('--newUser required!')
+        if (((opt.addAlias) || (opt.deleteAlias)) && (!opt.alias)) throw new IllegalArgumentException('--alias required!')
         if ((opt.delete) && (!opt.user)) throw new IllegalArgumentException('--user required!')
         if ((opt.update) && ((!opt.givenName) || (!opt.familyName))) throw new IllegalArgumentException('--givenName and --familyName required!')
         if ((opt.create) && ((!opt.givenName) || (!opt.familyName) || (!opt.user) || (!opt.password))) throw new IllegalArgumentException('--givenName, --familyName, --user and --password required!')
@@ -162,8 +163,16 @@ class GoogleAppsTool {
 
         //View user info
         if(options.view) {
-            return googleAppsClient.retrieveUser(options.user).toPrettyString()
-            //Create a new user
+            println "User Info:"
+            println googleAppsClient.retrieveUser(options.user).toPrettyString()
+
+            println "Email Aliases:"
+            def aliases = googleAppsClient.retrieveAliases(options.user).getAliases()
+            aliases.each { alias ->
+                println alias.toPrettyString()
+            }
+
+        //Create a new user
         } else if (options.create) {
             def result = null
 
@@ -173,14 +182,23 @@ class GoogleAppsTool {
                 result = googleAppsClient.createUser(options.user, options.givenName, options.familyName, options.password)
             }
 
-            if (result) return "User ${options.user} created."
+            println result.toPrettyString()
 
-            //Update a user
+        //Create a new alias
+        } else if (options.addAlias) {
+            println googleAppsClient.createAlias(options.user, options.alias).toPrettyString()
+
+        //Delete an alias
+        } else if (options.deleteAlias) {
+            googleAppsClient.deleteAlias(options.user, options.alias).toPrettyString()
+            println "Deleted"
+
+        //Update a user
         } else if (options.update) {
 
             def updateMap = [   username: options.user,
-                            familyName: options.familyName,
-                            givenName: options.givenName
+                                familyName: options.familyName,
+                                givenName: options.givenName
             ]
 
             if (options.hash && options.password) {
@@ -188,25 +206,27 @@ class GoogleAppsTool {
                 updateMap.password= options.password
             }
 
-            if (googleAppsClient.updateUser(updateMap)) return "User ${options.user} updated."
+            println googleAppsClient.updateUser(updateMap).toPrettyString()
 
-            //Rename a user
+        //Rename a user
         } else if (options.rename) {
             def updateMap = [username: options.user, newUsername: options.newUser]
 
-            if (googleAppsClient.updateUser(updateMap)) return "User ${options.user} renamed to ${options.newUser}."
+            println googleAppsClient.updateUser(updateMap).toPrettyString()
 
-            //Delete a user
+        //Delete a user
         } else if (options.delete) {
-            if (googleAppsClient.deleteUser(options.user)) return "User ${options.user} deleted."
 
-            //lock
+            googleAppsClient.deleteUser(options.user).toPrettyString()
+            println "Deleted"
+
+        //lock
         } else if (options.lock) {
-            if (googleAppsClient.suspendUser(options.user)) return "User ${options.user} suspended."
+            println googleAppsClient.suspendUser(options.user).toPrettyString()
 
-            //unlock
+        //unlock
         } else if (options.unlock) {
-            if (googleAppsClient.restoreUser(options.user)) return "User ${options.user} restored."
+            println googleAppsClient.restoreUser(options.user).toPrettyString()
         }
     }
 
