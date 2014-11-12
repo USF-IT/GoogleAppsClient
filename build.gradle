@@ -28,6 +28,9 @@ project(':GoogleAppsClient') {
     apply plugin: 'maven'
 
     dependencies {
+        compile "com.google.apis:google-api-services-oauth2:${gOAUTHVersion}"
+        compile "com.google.http-client:google-http-client-jackson2:${googleHTTPclientJackson}"
+        compile "com.google.oauth-client:google-oauth-client-jetty:${googleOAUTHclient}"
         compile "com.google.apis:google-api-services-admin-directory:${gAdminDirVersion}"
         compile "commons-codec:commons-codec:${commonsCodecVersion}"
         compile "org.slf4j:slf4j-api:${project.slf4jVersion}"
@@ -77,9 +80,6 @@ project(':GoogleAppsTool') {
     mainClassName = 'com.github.epierce.GoogleAppsTool'
 
     dependencies {
-        compile "com.google.apis:google-api-services-oauth2:${gOAUTHVersion}"
-        compile "com.google.http-client:google-http-client-jackson2:${googleHTTPclientJackson}"
-        compile "com.google.oauth-client:google-oauth-client-jetty:${googleOAUTHclient}"
         compile "commons-cli:commons-cli:${project.commonsCliVersion}"
         compile project(':GoogleAppsClient')
     }

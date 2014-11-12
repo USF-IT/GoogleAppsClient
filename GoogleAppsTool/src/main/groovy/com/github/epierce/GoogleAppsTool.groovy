@@ -1,44 +1,6 @@
 package com.github.epierce
 
-import com.google.api.client.auth.oauth2.Credential
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp
-import com.google.api.client.auth.oauth2.DataStoreCredentialRefreshListener
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
-import com.google.api.client.http.HttpTransport
-import com.google.api.client.json.JsonFactory
-import com.google.api.client.json.jackson2.JacksonFactory
-import com.google.api.client.util.store.FileDataStoreFactory
-import com.google.api.services.oauth2.Oauth2
-
 class GoogleAppsTool {
-
-    private static final def applicationName = "GoogleAppsTool"
-    private static final def dataStoreDir = new File(System.getProperty("user.home"), ".GoogleAppsTool")
-
-    private static FileDataStoreFactory dataStoreFactory
-    private static HttpTransport httpTransport
-    private static final JsonFactory jsonFactory = JacksonFactory.getDefaultInstance()
-    private static DataStoreCredentialRefreshListener refreshListener
-    private static Credential credential
-
-    /** OAuth 2.0 scopes. */
-    private static final def SCOPES = [
-            "https://www.googleapis.com/auth/admin.directory.group",
-            "https://www.googleapis.com/auth/admin.directory.group.member",
-            "https://www.googleapis.com/auth/admin.directory.notifications",
-            "https://www.googleapis.com/auth/admin.directory.orgunit",
-            "https://www.googleapis.com/auth/admin.directory.user",
-            "https://www.googleapis.com/auth/admin.directory.user.alias",
-            "https://www.googleapis.com/auth/admin.directory.user.security",
-            "https://www.googleapis.com/auth/admin.directory.userschema"
-    ]
-
-    private static Oauth2 oauth2
-    private static GoogleClientSecrets clientSecrets
-
     public static void main(String[] args) {
 
 
@@ -46,9 +8,13 @@ class GoogleAppsTool {
 
             def opt = getCommandLineOptions(args)
 
-            generateOauthToken()
+            def googleClientAuth = new GoogleClientAuth("GoogleAppsTool", System.getProperty("user.home")+"/.GoogleAppsTool" , "/tmp/client_secrets.json")
 
-            def googleAppsClient = new GoogleAppsClient(applicationName, httpTransport, jsonFactory, credential)
+            def googleAppsClient = new GoogleAppsClient(
+                    googleClientAuth.getApplicationName(),
+                    googleClientAuth.getHttpTransport(),
+                    googleClientAuth.getJsonFactory(),
+                    googleClientAuth.getCredential())
 
             runAction(googleAppsClient, opt)
 
@@ -56,33 +22,6 @@ class GoogleAppsTool {
              exitOnError e.message
         }
 
-    }
-
-    static void generateOauthToken() {
-        httpTransport = GoogleNetHttpTransport.newTrustedTransport()
-        dataStoreFactory = new FileDataStoreFactory(dataStoreDir)
-        refreshListener = new DataStoreCredentialRefreshListener(applicationName, dataStoreFactory)
-
-        try {
-            // load client secrets
-            clientSecrets = GoogleClientSecrets.load(jsonFactory, new InputStreamReader(new FileInputStream("/tmp/client_secrets.json")))
-
-            // set up authorization code flow
-            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport, jsonFactory, clientSecrets, SCOPES)
-                    .setDataStoreFactory(dataStoreFactory)
-                    .setApprovalPrompt("force")
-                    .setAccessType("offline")
-                    .addRefreshListener(refreshListener)
-                    .build();
-
-            // authorize
-            credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user")
-            oauth2 = new Oauth2.Builder(httpTransport, jsonFactory, credential).setApplicationName(applicationName).build()
-
-        } catch (FileNotFoundException e) {
-            println("Enter Client ID and Secret from https://code.google.com/apis/console into /tmp/client_secrets.json")
-            System.exit(1)
-        }
     }
 
     /**
@@ -155,6 +94,10 @@ class GoogleAppsTool {
         if ((opt.delete) && (!opt.user)) throw new IllegalArgumentException('--user required!')
         if ((opt.update) && ((!opt.givenName) || (!opt.familyName))) throw new IllegalArgumentException('--givenName and --familyName required!')
         if ((opt.create) && ((!opt.givenName) || (!opt.familyName) || (!opt.user) || (!opt.password))) throw new IllegalArgumentException('--givenName, --familyName, --user and --password required!')
+
+        //Account identifiers are email addresses, not usernames
+        if ((opt.user) && (! "${opt.user}".contains('@'))) throw new IllegalArgumentException('Invalid user identifier. user@domain required.')
+
     }
 
     private static runAction(googleAppsClient, options) {
