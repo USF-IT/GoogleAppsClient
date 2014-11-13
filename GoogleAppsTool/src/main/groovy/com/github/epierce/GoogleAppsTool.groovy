@@ -8,7 +8,9 @@ class GoogleAppsTool {
 
             def opt = getCommandLineOptions(args)
 
-            def googleClientAuth = new GoogleClientAuth("GoogleAppsTool", System.getProperty("user.home")+"/.GoogleAppsTool" , "/tmp/client_secrets.json")
+            def configDir = System.getProperty("user.home")+"/.GoogleAppsTool"
+
+            def googleClientAuth = new GoogleClientAuth("GoogleAppsTool", configDir , "${configDir}/client_secrets.json")
 
             def googleAppsClient = new GoogleAppsClient(
                     googleClientAuth.getApplicationName(),
